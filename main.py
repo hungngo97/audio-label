@@ -65,7 +65,7 @@ print(LABELS)
 
 SOUND_CLASSES = 5
 TRIAL_SAMPLES_PER_CLASS = 5
-PREDICTION_SAMPLES_PER_CLASS = 3
+PREDICTION_SAMPLES_PER_CLASS = 15
 
 # Pick a subset from labels list for users to choose
 random_labels = random.sample(LABELS, SOUND_CLASSES)
