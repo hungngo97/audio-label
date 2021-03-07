@@ -9,7 +9,7 @@ import SessionState
 import copy
 
 answers = {}
-DEFAULT_OPTION = "Choose one option below"
+DEFAULT_OPTION = "Choose the option below"
 
 
 def audio_section(i, file_name):
@@ -20,7 +20,7 @@ def audio_section(i, file_name):
     options = copy.deepcopy(random_labels)
     options.insert(0, DEFAULT_OPTION)
     label = st.radio("Audio label", options, key=file_name)
-    st.write('You selected label: ' + label + ' for the above sound')
+    st.write('You selected label: ' + label)
     answers[i] = [file_name, label]
 
 
@@ -35,9 +35,9 @@ def get_table_download_link(df):
     return href
 
 
-def render_trial_sound(label, trials_per_class):
+def render_trial_sound(user_id, label, trials_per_class):
     # read the files from the label directory
-    label_dir = './data/' + label
+    label_dir = './tasks/' + user_id + "/trial/" + label
     wav_files = [f for f in listdir(label_dir) if isfile(join(label_dir, f))]
     # print('Wav files', wav_files)
     # render samples sounds
@@ -53,24 +53,28 @@ def get_random_prediction_files(labels, trials_per_class):
     result = []
     for label in labels:
         # read the files from the label directory
-        label_dir = './data/' + label
+        label_dir = './tasks/' + user_id + '/prediction/' + label
         # need to append label dir before it
         wav_files = [label_dir + '/' + f for f in listdir(label_dir) if isfile(join(label_dir, f))]
         random_wav_files = random.sample(wav_files, trials_per_class)
         for random_wav_file in random_wav_files:
             result.append(random_wav_file)
+    print('Result', result)
     return result
 
 
 def render_download_link():
     # for loop through answers, if there's an answer that is unchosen, then do not let the user export answer
     is_complete = True
+    questions_not_answered = ""
     for i in answers:
         chosen_label = answers[i][1]
         if chosen_label == DEFAULT_OPTION:
-            st.markdown('*Question {} is not chosen*'.format(i + 1))
+            questions_not_answered += str(i) + ','
             is_complete = False
             continue
+    if len(questions_not_answered) > 0:
+        st.markdown('*Question {} is not chosen*'.format(questions_not_answered))
     if (not is_complete):
         st.markdown('**Cannot export to csv because still miss question(s) above**')
         return
@@ -79,36 +83,55 @@ def render_download_link():
                                                                    columns=['file_name', 'chosen_label'])),
                     unsafe_allow_html=True)
 
+def reset_data():
+    print('resetting data')
+    session.random_labels = []
+    session.random_prediction_files = []
+    answers = {}
+    random_labels = []
+    random_prediction_files = []
 
-DATA_SOUNDS = [x[0] for x in os.walk('./data')]
+# Get user id
+session = SessionState.get(random_labels=[], random_prediction_files=[], user_id='user1')
+user_id = st.text_input("UserID", 'user1')
+if user_id != session.user_id:
+    # reset all data
+    reset_data()
+    session.user_id = user_id
+user_id = session.user_id
+
+print('userid', user_id)
+# Get data from local dir
+DATA_SOUNDS = [x[0] for x in os.walk('./tasks/' + user_id + "/trial")]
 LABELS = []
 for datasound in DATA_SOUNDS:
-    if len(datasound) <= len('./data'):
+    if len(datasound) <= len('./tasks/' + user_id + "/trial/"):
         continue
-    LABELS.append(datasound[len('./data/'):])
-# print('DATA_SOUNDS',DATA_SOUNDS)
-# print('LABELS',LABELS)
+    LABELS.append(datasound[len('./tasks/' + user_id + "/trial/"):])
+print('DATA_SOUNDS',DATA_SOUNDS)
+print('LABELS',LABELS)
+
 
 SOUND_CLASSES = 5
 TRIAL_SAMPLES_PER_CLASS = 5
 PREDICTION_SAMPLES_PER_CLASS = 15
 
 # Pick a subset from labels list for users to choose
-session = SessionState.get(random_labels=[], random_prediction_files=[])
 random_labels = session.random_labels
+
 if len(random_labels) <= 0:
     random_labels = random.sample(LABELS, SOUND_CLASSES)
 session.random_labels = random_labels
 print('Random labels', random_labels)
 
 # Draw sample classes out for users
-st.markdown('**First, you need to get familiar with the sample sounds of what you are going to label**')
+st.markdown('**Similar to the machine learning model, train yourself by listening to all samples for the following 5 sounds**')
 for label in random_labels:
-    st.markdown('**Audio class**: {}'.format(label))
-    render_trial_sound(label, TRIAL_SAMPLES_PER_CLASS)
+    st.markdown('**{}**:'.format(label))
+    render_trial_sound(user_id, label, TRIAL_SAMPLES_PER_CLASS)
 
 st.markdown(
-    '**Second, these are the audio samples that you need to label to compare the performance with the machine learning model**')
+    '**Now evaluate the following 75 sound samples. For each sample, listen to the sound sample and choose the option that best describes the sample.**')
 # Draw prediction sounds for users to choose from
 # Get random list of files
 random_prediction_files = session.random_prediction_files
@@ -117,19 +140,20 @@ if (len(random_prediction_files) <= 0):
     random.shuffle(random_prediction_files)
 session.random_prediction_files = random_prediction_files
 for i, f in enumerate(random_prediction_files):
-    st.markdown('**Audio Sample No.{}, please listen and answer in the multiple choice below: **'.format(i))
+    st.markdown('**Audio Sample No.{}: **'.format(i))
     audio_section(i, f)
 
+st.markdown('**Important: After evaluating all the samples, please click the following button to download the results in a CSV and send it to the researchers**')
 st.markdown(
     '**After finished labeling, please click the following button to export CSV results and send it to researchers**')
 
 render_download_link()
 
 # TODO: delete?
-st.markdown("**Click reset below to reset all of your choices and give a new set of audio files**")
-if st.button("Reset"):
-    session.random_labels = []
-    session.random_prediction_files = []
-    answers = {}
+# st.markdown("**Click reset below to reset all of your choices and give a new set of audio files**")
+# if st.button("Reset"):
+#     session.random_labels = []
+#     session.random_prediction_files = []
+#     answers = {}
 
 # TODO: accuracy calculator?
