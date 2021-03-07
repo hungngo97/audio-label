@@ -11,6 +11,7 @@ import copy
 answers = {}
 DEFAULT_OPTION = "Choose one option below"
 
+
 def audio_section(i, file_name):
     # print('file name', file_name)
     audio_file = open(file_name, 'rb')
@@ -33,6 +34,7 @@ def get_table_download_link(df):
     href = f'<a href="data:file/csv;base64,{b64}" download="myfilename.csv">Download csv file</a>'
     return href
 
+
 def render_trial_sound(label, trials_per_class):
     # read the files from the label directory
     label_dir = './data/' + label
@@ -44,6 +46,7 @@ def render_trial_sound(label, trials_per_class):
         audio_file = open(label_dir + '/' + wav_file, 'rb')
         audio_bytes = audio_file.read()
         st.audio(audio_bytes)
+
 
 # Return list of random files from each label
 def get_random_prediction_files(labels, trials_per_class):
@@ -58,13 +61,14 @@ def get_random_prediction_files(labels, trials_per_class):
             result.append(random_wav_file)
     return result
 
+
 def render_download_link():
     # for loop through answers, if there's an answer that is unchosen, then do not let the user export answer
     is_complete = True
     for i in answers:
         chosen_label = answers[i][1]
         if chosen_label == DEFAULT_OPTION:
-            st.markdown('*Question {} is not chosen*'.format(i))
+            st.markdown('*Question {} is not chosen*'.format(i + 1))
             is_complete = False
             continue
     if (not is_complete):
@@ -72,17 +76,18 @@ def render_download_link():
         return
     if (is_complete):
         st.markdown(get_table_download_link(pd.DataFrame.from_dict(answers, orient='index',
-                        columns=['file_name', 'chosen_label'])), unsafe_allow_html=True)
+                                                                   columns=['file_name', 'chosen_label'])),
+                    unsafe_allow_html=True)
 
-  
+
 DATA_SOUNDS = [x[0] for x in os.walk('./data')]
 LABELS = []
 for datasound in DATA_SOUNDS:
     if len(datasound) <= len('./data'):
         continue
     LABELS.append(datasound[len('./data/'):])
-# print(DATA_SOUNDS)
-# print(LABELS)
+# print('DATA_SOUNDS',DATA_SOUNDS)
+# print('LABELS',LABELS)
 
 SOUND_CLASSES = 5
 TRIAL_SAMPLES_PER_CLASS = 5
@@ -94,7 +99,7 @@ random_labels = session.random_labels
 if len(random_labels) <= 0:
     random_labels = random.sample(LABELS, SOUND_CLASSES)
 session.random_labels = random_labels
-# print('Random labels', random_labels)
+print('Random labels', random_labels)
 
 # Draw sample classes out for users
 st.markdown('**First, you need to get familiar with the sample sounds of what you are going to label**')
@@ -102,8 +107,8 @@ for label in random_labels:
     st.markdown('**Audio class**: {}'.format(label))
     render_trial_sound(label, TRIAL_SAMPLES_PER_CLASS)
 
-
-st.markdown('**Second, these are the audio samples that you need to label to compare the performance with the machine learning model**')
+st.markdown(
+    '**Second, these are the audio samples that you need to label to compare the performance with the machine learning model**')
 # Draw prediction sounds for users to choose from
 # Get random list of files
 random_prediction_files = session.random_prediction_files
@@ -115,13 +120,16 @@ for i, f in enumerate(random_prediction_files):
     st.markdown('**Audio Sample No.{}, please listen and answer in the multiple choice below: **'.format(i))
     audio_section(i, f)
 
-
-st.markdown('**After finished labeling, please click the following button to export CSV results and send it to researchers**')
+st.markdown(
+    '**After finished labeling, please click the following button to export CSV results and send it to researchers**')
 
 render_download_link()
 
+# TODO: delete?
 st.markdown("**Click reset below to reset all of your choices and give a new set of audio files**")
 if st.button("Reset"):
-  session.random_labels = []
-  session.random_prediction_files = []
-  answers = {}
+    session.random_labels = []
+    session.random_prediction_files = []
+    answers = {}
+
+# TODO: accuracy calculator?
