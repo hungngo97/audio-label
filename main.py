@@ -9,7 +9,7 @@ import SessionState
 import copy
 
 answers = {}
-DEFAULT_OPTION = "Choose the option below"
+DEFAULT_OPTION = "Choose an option above"
 
 
 def audio_section(i, file_name):
@@ -20,7 +20,7 @@ def audio_section(i, file_name):
     options = copy.deepcopy(random_labels)
     options.insert(0, DEFAULT_OPTION)
     label = st.radio("Audio label", options, key=file_name)
-    st.write('You selected label: ' + label)
+    st.write('You selected label: **{}**'.format(label))
     answers[i] = [file_name, label]
 
 
@@ -92,10 +92,10 @@ def reset_data():
     random_prediction_files = []
 
 # Get user id
-session = SessionState.get(random_labels=[], random_prediction_files=[], user_id='user1')
-user_id = st.text_input("UserID", 'user1')
+session = SessionState.get(random_labels=[], random_prediction_files=[], user_id='')
+user_id = st.text_input("UserID", 'Enter the user id provided to you')
 
-if 'user' not in user_id:
+if 'user' not in user_id or 'Enter' in user_id:
     st.markdown('**Error: Enter a correct UserID (i.e: "user1", "user2")**')
 else:
     if user_id != session.user_id:
