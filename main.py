@@ -5,6 +5,7 @@ import os
 import random
 from os import listdir
 from os.path import isfile, join
+import SessionState
 
 answers = {}
 
@@ -68,7 +69,11 @@ TRIAL_SAMPLES_PER_CLASS = 5
 PREDICTION_SAMPLES_PER_CLASS = 15
 
 # Pick a subset from labels list for users to choose
-random_labels = random.sample(LABELS, SOUND_CLASSES)
+session = SessionState.get(random_labels=[], random_prediction_files=[])
+random_labels = session.random_labels
+if len(random_labels) <= 0:
+    random_labels = random.sample(LABELS, SOUND_CLASSES)
+session.random_labels = random_labels
 print('Random labels', random_labels)
 
 # Draw sample classes out for users
@@ -81,7 +86,11 @@ for label in random_labels:
 st.markdown('**Second, these are the audio samples that you need to label to compare the performance with the machine learning model**')
 # Draw prediction sounds for users to choose from
 # Get random list of files
-random_prediction_files = get_random_prediction_files(random_labels, PREDICTION_SAMPLES_PER_CLASS)
+random_prediction_files = session.random_prediction_files
+if (len(random_prediction_files) <= 0):
+    random_prediction_files = get_random_prediction_files(random_labels, PREDICTION_SAMPLES_PER_CLASS)
+    random.shuffle(random_prediction_files)
+session.random_prediction_files = random_prediction_files
 for f in random_prediction_files:
     st.markdown('**Audio Sample, please listen and answer in the multiple choice below: **')
     audio_section(f)
@@ -90,3 +99,9 @@ for f in random_prediction_files:
 st.markdown('**After finished labeling, please click the following button to export CSV results and send it to researchers**')
 st.markdown(get_table_download_link(pd.DataFrame.from_dict(answers, orient='index',
                        columns=['chosen_label'])), unsafe_allow_html=True)
+
+st.markdown("**Click reset below to reset all of your choices and give a new set of audio files**")
+if st.button("Reset"):
+  session.random_labels = []
+  session.random_prediction_files = []
+  answers = {}
