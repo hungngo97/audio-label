@@ -93,8 +93,7 @@ def reset_data():
 
 # Get user id
 session = SessionState.get(random_labels=[], random_prediction_files=[], user_id='')
-user_id = st.text_input("UserID", 'Enter the user id provided to you')
-
+user_id = st.text_input("UserID: (Enter the user id provided to you)", '')
 if 'user' not in user_id or 'Enter' in user_id:
     st.markdown('**Error: Enter a correct UserID (i.e: "user1", "user2")**')
 else:
