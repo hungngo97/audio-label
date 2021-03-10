@@ -12,16 +12,17 @@ answers = {}
 DEFAULT_OPTION = "Choose an option above"
 
 
-def audio_section(i, file_name):
+def audio_section(idx, file_name):
     # print('file name', file_name)
     audio_file = open(file_name, 'rb')
     audio_bytes = audio_file.read()
     st.audio(audio_bytes)
     options = copy.deepcopy(random_labels)
     options.insert(0, DEFAULT_OPTION)
-    label = st.radio("Audio label", options, key=file_name)
-    st.write('You selected label: **{}**'.format(label))
-    answers[i] = [file_name, label]
+    radio_answer = st.radio("Audio label", options, key=file_name)
+    st.write('You selected label: **{}**'.format(radio_answer))
+    global answers
+    answers[idx] = [file_name, radio_answer]
 
 
 def get_table_download_link(df):
@@ -83,13 +84,16 @@ def render_download_link():
                                                                    columns=['file_name', 'chosen_label'])),
                     unsafe_allow_html=True)
 
+
 def reset_data():
     print('resetting data')
     session.random_labels = []
     session.random_prediction_files = []
+    global answers
     answers = {}
     random_labels = []
     random_prediction_files = []
+
 
 # Get user id
 session = SessionState.get(random_labels=[], random_prediction_files=[], user_id='')
@@ -111,9 +115,8 @@ else:
         if len(datasound) <= len('./tasks/' + user_id + "/trial/"):
             continue
         LABELS.append(datasound[len('./tasks/' + user_id + "/trial/"):])
-    print('DATA_SOUNDS',DATA_SOUNDS)
-    print('LABELS',LABELS)
-
+    print('DATA_SOUNDS', DATA_SOUNDS)
+    print('LABELS', LABELS)
 
     SOUND_CLASSES = 5
     TRIAL_SAMPLES_PER_CLASS = 5
@@ -128,7 +131,8 @@ else:
     print('Random labels', random_labels)
 
     # Draw sample classes out for users
-    st.markdown('**Similar to the machine learning model, train yourself by listening to all samples for the following 5 sounds**')
+    st.markdown(
+        '**Similar to the machine learning model, train yourself by listening to all samples for the following 5 sounds**')
     for label in random_labels:
         st.markdown('**{}**:'.format(label))
         render_trial_sound(user_id, label, TRIAL_SAMPLES_PER_CLASS)
@@ -146,7 +150,8 @@ else:
         st.markdown('**Sample No.{}: **'.format(i + 1))
         audio_section(i + 1, f)
 
-    st.markdown('**Important: After evaluating all the samples, please click the following button to download the results in a CSV and send it to the researchers**')
+    st.markdown(
+        '**Important: After evaluating all the samples, please click the following button to download the results in a CSV and send it to the researchers**')
 
     render_download_link()
 
