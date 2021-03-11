@@ -36,7 +36,7 @@ def get_table_download_link(df):
     return href
 
 
-def render_trial_sound(user_id, label, trials_per_class):
+def render_trial_sound(label, trials_per_class):
     # read the files from the label directory
     label_dir = './data/' + label
     wav_files = [f for f in listdir(label_dir) if isfile(join(label_dir, f))]
