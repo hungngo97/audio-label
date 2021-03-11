@@ -10,6 +10,7 @@ import copy
 
 answers = {}
 DEFAULT_OPTION = "Choose an option above"
+UNKNOWN_OPTION = "Unknown"
 
 
 def audio_section(idx, file_name):
@@ -19,6 +20,7 @@ def audio_section(idx, file_name):
     st.audio(audio_bytes)
     options = copy.deepcopy(random_labels)
     options.insert(0, DEFAULT_OPTION)
+    options.append(UNKNOWN_OPTION)
     radio_answer = st.radio("Audio label", options, key=file_name)
     st.write('You selected label: **{}**'.format(radio_answer))
     global answers
