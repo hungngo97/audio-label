@@ -38,7 +38,7 @@ def get_table_download_link(df):
 
 def render_trial_sound(user_id, label, trials_per_class):
     # read the files from the label directory
-    label_dir = './tasks/' + user_id + "/trial/" + label
+    label_dir = './data/' + label
     wav_files = [f for f in listdir(label_dir) if isfile(join(label_dir, f))]
     # print('Wav files', wav_files)
     # render samples sounds
@@ -54,7 +54,7 @@ def get_random_prediction_files(labels, trials_per_class):
     result = []
     for label in labels:
         # read the files from the label directory
-        label_dir = './tasks/' + user_id + '/prediction/' + label
+        label_dir = './data/' + label
         # need to append label dir before it
         wav_files = [label_dir + '/' + f for f in listdir(label_dir) if isfile(join(label_dir, f))]
         random_wav_files = random.sample(wav_files, trials_per_class)
@@ -96,70 +96,59 @@ def reset_data():
 
 
 # Get user id
-session = SessionState.get(random_labels=[], random_prediction_files=[], user_id='')
-user_id = st.text_input("UserID: (Enter the user id provided to you)", '')
-if 'user' not in user_id or 'Enter' in user_id:
-    st.markdown('**Error: Enter a correct UserID (i.e: "user1", "user2")**')
-else:
-    if user_id != session.user_id:
-        # reset all data
-        reset_data()
-        session.user_id = user_id
-    user_id = session.user_id
+session = SessionState.get(random_labels=[], random_prediction_files=[])
+# Get data from local dir
+DATA_SOUNDS = [x[0] for x in os.walk('./data')]
+LABELS = []
+for datasound in DATA_SOUNDS:
+    if len(datasound) <= len('./data'):
+        continue
+    LABELS.append(datasound[len('./data/'):])
+print('DATA_SOUNDS', DATA_SOUNDS)
+print('LABELS', LABELS)
 
-    print('userid', user_id)
-    # Get data from local dir
-    DATA_SOUNDS = [x[0] for x in os.walk('./tasks/' + user_id + "/trial")]
-    LABELS = []
-    for datasound in DATA_SOUNDS:
-        if len(datasound) <= len('./tasks/' + user_id + "/trial/"):
-            continue
-        LABELS.append(datasound[len('./tasks/' + user_id + "/trial/"):])
-    print('DATA_SOUNDS', DATA_SOUNDS)
-    print('LABELS', LABELS)
+SOUND_CLASSES = 5
+TRIAL_SAMPLES_PER_CLASS = 5
+PREDICTION_SAMPLES_PER_CLASS = 15
 
-    SOUND_CLASSES = 5
-    TRIAL_SAMPLES_PER_CLASS = 5
-    PREDICTION_SAMPLES_PER_CLASS = 15
+# Pick a subset from labels list for users to choose
+random_labels = session.random_labels
 
-    # Pick a subset from labels list for users to choose
-    random_labels = session.random_labels
+if len(random_labels) <= 0:
+    random_labels = random.sample(LABELS, SOUND_CLASSES)
+session.random_labels = random_labels
+print('Random labels', random_labels)
 
-    if len(random_labels) <= 0:
-        random_labels = random.sample(LABELS, SOUND_CLASSES)
-    session.random_labels = random_labels
-    print('Random labels', random_labels)
+# Draw sample classes out for users
+st.markdown(
+    '**Similar to the machine learning model, train yourself by listening to all samples for the following 5 sounds**')
+for label in random_labels:
+    st.markdown('**{}**:'.format(label))
+    render_trial_sound(label, TRIAL_SAMPLES_PER_CLASS)
 
-    # Draw sample classes out for users
-    st.markdown(
-        '**Similar to the machine learning model, train yourself by listening to all samples for the following 5 sounds**')
-    for label in random_labels:
-        st.markdown('**{}**:'.format(label))
-        render_trial_sound(user_id, label, TRIAL_SAMPLES_PER_CLASS)
+st.markdown(
+    '**Now evaluate the following 75 sound samples. For each sample, listen to the sound sample and choose the option that best describes the sample.**')
+# Draw prediction sounds for users to choose from
+# Get random list of files
+random_prediction_files = session.random_prediction_files
+if (len(random_prediction_files) <= 0):
+    random_prediction_files = get_random_prediction_files(random_labels, PREDICTION_SAMPLES_PER_CLASS)
+    random.shuffle(random_prediction_files)
+session.random_prediction_files = random_prediction_files
+for i, f in enumerate(random_prediction_files):
+    st.markdown('**Sample No.{}: **'.format(i + 1))
+    audio_section(i + 1, f)
 
-    st.markdown(
-        '**Now evaluate the following 75 sound samples. For each sample, listen to the sound sample and choose the option that best describes the sample.**')
-    # Draw prediction sounds for users to choose from
-    # Get random list of files
-    random_prediction_files = session.random_prediction_files
-    if (len(random_prediction_files) <= 0):
-        random_prediction_files = get_random_prediction_files(random_labels, PREDICTION_SAMPLES_PER_CLASS)
-        random.shuffle(random_prediction_files)
-    session.random_prediction_files = random_prediction_files
-    for i, f in enumerate(random_prediction_files):
-        st.markdown('**Sample No.{}: **'.format(i + 1))
-        audio_section(i + 1, f)
+st.markdown(
+    '**Important: After evaluating all the samples, please click the following button to download the results in a CSV and send it to the researchers**')
 
-    st.markdown(
-        '**Important: After evaluating all the samples, please click the following button to download the results in a CSV and send it to the researchers**')
+render_download_link()
 
-    render_download_link()
+# TODO: delete?
+# st.markdown("**Click reset below to reset all of your choices and give a new set of audio files**")
+# if st.button("Reset"):
+#     session.random_labels = []
+#     session.random_prediction_files = []
+#     answers = {}
 
-    # TODO: delete?
-    # st.markdown("**Click reset below to reset all of your choices and give a new set of audio files**")
-    # if st.button("Reset"):
-    #     session.random_labels = []
-    #     session.random_prediction_files = []
-    #     answers = {}
-
-    # TODO: accuracy calculator?
+# TODO: accuracy calculator?
